@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Check which AI crawlers your robots.txt lets in, and fix it in one click.">
+<title>VioletByte AI crawler access checker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%237c3aed'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:title" content="VioletByte AI crawler access checker">
+<meta property="og:description" content="Check which AI crawlers your robots.txt lets in, and fix it in one click.">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light;
+  --paper:#ffffff;--wash:#f7f5fc;--ink:#1d1a2e;--muted:#69667f;--line:#e4e1ee;--line2:#c9c4dc;
+  --violet:#6d28d9;--violet-d:#5b21b6;--violet-t:#f1ebfd;
+  --ok:#0f7a4f;--ok-t:#e6f5ee;--bad:#b4233c;--bad-t:#fceaee;--mid:#9a5700;--mid-t:#fdf1dc;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;line-height:1.6}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+.site{border-top:4px solid var(--violet);border-bottom:1px solid var(--line)}
+.site .wrap{padding-top:14px;padding-bottom:14px}
+.brand{display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:16px}
+.mark{width:14px;height:14px;border-radius:3px;background:var(--violet)}
+.hero{padding:44px 0 32px}
+h1{font-size:32px;line-height:1.15;font-weight:700;letter-spacing:-.03em;margin:0 0 12px}
+.lede{color:var(--muted);margin:0;max-width:60ch}
+.tool{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,7fr);gap:32px;align-items:start;padding-bottom:72px}
+.editor{position:sticky;top:16px;display:grid;gap:12px}
+.box{background:var(--paper);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--wash);border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+.sp{margin-left:auto;display:flex;gap:6px;align-items:center}
+.btn{font:inherit;font-size:12px;min-height:32px;padding:0 12px;border:1px solid var(--line2);background:var(--paper);color:var(--ink);border-radius:6px;cursor:pointer}
+.btn:hover{border-color:var(--violet);color:var(--violet)}
+.btn.pri{background:var(--violet);border-color:var(--violet);color:#fff;font-weight:600}
+.btn.pri:hover{background:var(--violet-d);border-color:var(--violet-d);color:#fff}
+:is(.btn,.stat,.face,summary,.seg button):focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+textarea,input{display:block;width:100%;border:0;background:transparent;color:var(--ink);font:inherit;padding:12px}
+textarea{font-size:13px;line-height:1.6;resize:vertical;white-space:pre;overflow:auto;tab-size:2}
+#robots{min-height:340px}
+#meta{min-height:64px}
+textarea:focus-visible,input:focus-visible{outline:2px solid var(--violet);outline-offset:-2px}
+.urlrow{display:flex;gap:8px;align-items:center;padding-right:8px}
+.urlrow input{flex:1}
+summary{cursor:pointer;padding:10px 12px;font-size:12px;color:var(--muted);list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";display:inline-block;width:14px;color:var(--violet)}
+details[open] summary::before{content:"-"}
+details[open] summary{border-bottom:1px solid var(--line);background:var(--wash)}
+.sum{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0;margin-bottom:16px;display:grid;gap:12px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.stat{font:inherit;text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:8px 12px;cursor:pointer;color:var(--ink)}
+.stat b{display:block;font-size:22px;line-height:1.2}
+.stat span{font-size:12px;color:var(--muted)}
+.stat.f-blocked b{color:var(--bad)}.stat.f-partial b{color:var(--mid)}.stat.f-allowed b{color:var(--ok)}
+.stat:hover{border-color:var(--violet)}
+.stat.on{border-color:var(--violet);background:var(--violet-t)}
+.meter{display:flex;height:6px;gap:2px;border-radius:3px;overflow:hidden;background:var(--wash)}
+.seg-b{background:var(--bad)}.seg-p{background:var(--mid)}.seg-a{background:var(--ok)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lab{font-size:12px;color:var(--muted)}
+.ok-note{font-size:12px;color:var(--ok)}
+.msg{border:1px solid var(--line);background:var(--wash);border-radius:8px;padding:10px 12px;margin:0 0 12px;font-size:13px}
+.msg.bad{border-color:var(--bad);background:var(--bad-t)}
+.msg.good{border-color:var(--ok);background:var(--ok-t)}
+.empty{border:1px dashed var(--line2);border-radius:8px;padding:28px;color:var(--muted)}
+.empty p{margin:0 0 14px;max-width:48ch}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.tile{perspective:1100px;transition:transform .15s,opacity .2s}
+.tile:hover{transform:translateY(-2px)}
+.tile.dim{opacity:.3}
+.flip{display:grid;height:100%;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.tile.on .flip{transform:rotateY(180deg)}
+.face{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:10px;padding:14px;font:inherit;color:inherit;text-align:left;background:var(--paper);min-width:0}
+.front{cursor:pointer;width:100%}
+.back{transform:rotateY(180deg);background:var(--wash)}
+.tile.allowed .front{background:var(--ok-t);border-color:color-mix(in srgb,var(--ok) 30%,var(--line))}
+.tile.partial .front{background:var(--mid-t);border-color:color-mix(in srgb,var(--mid) 35%,var(--line))}
+.tile.blocked .front{background:var(--bad-t);border-color:color-mix(in srgb,var(--bad) 30%,var(--line))}
+.tt{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.st{font-size:12px;font-weight:700}
+.st::before{content:"";display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;background:currentColor}
+.s-allowed{color:var(--ok)}.s-partial{color:var(--mid)}.s-blocked{color:var(--bad)}
+.need-tag{font-size:11px;font-weight:600;background:var(--paper);border:1px solid var(--line2);border-radius:999px;padding:0 8px}
+.nm{font-size:17px;line-height:1.25}
+.op{font-size:12px;color:var(--muted)}
+.aff{font-size:12px;line-height:1.45}
+.foot{margin-top:auto;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding-top:8px}
+.front:hover .more{color:var(--violet)}
+.why{margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
+.seg{display:inline-flex;align-self:flex-start;border:1px solid var(--line2);border-radius:6px;overflow:hidden;background:var(--paper)}
+.seg button{font:inherit;font-size:12px;min-height:32px;padding:0 14px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line2)}
+.seg button[aria-pressed="true"]{background:var(--violet-t);color:var(--violet);font-weight:700}
+@keyframes flash{from{box-shadow:0 0 0 3px var(--violet-t),0 0 0 4px var(--violet)}to{box-shadow:0 0 0 0 transparent}}
+.tile.flash .face{animation:flash .8s ease-out}
+@media (prefers-reduced-motion:reduce){.flip,.tile{transition:none}.tile:hover{transform:none}.tile.flash .face{animation:none}}
+.help{border:1px solid var(--line);border-radius:8px;background:var(--paper);padding:12px;margin-bottom:12px;font-size:13px}
+.help p{margin:0 0 10px;color:var(--muted);max-width:72ch}
+.help dl{display:grid;grid-template-columns:120px 1fr;gap:8px 12px;margin:0}
+.help dt{font-weight:600}
+.help dd{margin:0;color:var(--muted)}
+footer{padding:0 0 48px;color:var(--muted);font-size:12px;max-width:72ch}
+@media (max-width:880px){.tool{grid-template-columns:1fr}.editor{position:static}textarea,input{font-size:16px}#robots{min-height:260px}}
+@media (max-width:520px){.wrap{padding:0 16px}h1{font-size:26px}.tiles{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.help dl{grid-template-columns:1fr;gap:2px}.help dd{margin-bottom:8px}}
+</style>
+</head>
+<body>
+<header class="site"><div class="wrap"><span class="brand"><span class="mark" aria-hidden="true"></span>VioletByte</span></div></header>
+
+<div class="wrap">
+  <section class="hero">
+    <h1>AI crawler access checker</h1>
+    <p class="lede">Paste or edit your robots.txt. Every AI crawler below updates as you type, and you can fix problems in one click. Pasted text is checked in your browser and never uploaded.</p>
+  </section>
+
+  <div class="tool">
+    <div class="editor">
+      <div class="box" id="urlbox" hidden>
+        <div class="bar">site address</div>
+        <div class="urlrow"><input id="url" type="text" inputmode="url" spellcheck="false" placeholder="https://example.com"><button class="btn pri" id="fetch" type="button">Check site</button></div>
+      </div>
+      <div class="box">
+        <div class="bar">robots.txt
+          <span class="sp">
+            <button class="btn" type="button" id="example">Example</button>
+            <button class="btn" type="button" id="reset">Reset</button>
+            <button class="btn" type="button" id="copyAll" data-l="Copy">Copy</button>
+          </span>
+        </div>
+        <textarea id="robots" spellcheck="false" wrap="off" aria-label="robots.txt contents" placeholder="User-agent: *&#10;Disallow: /admin/&#10;&#10;User-agent: GPTBot&#10;Disallow: /"></textarea>
+      </div>
+      <details class="box">
+        <summary>meta robots or X-Robots-Tag (optional)</summary>
+        <textarea id="meta" spellcheck="false" aria-label="meta robots tags" placeholder='<meta name="robots" content="noindex">'></textarea>
+      </details>
+    </div>
+
+    <div id="results" aria-live="polite"></div>
+  </div>
+
+  <footer>Open yoursite.com/robots.txt in a browser, copy everything and paste it in. Blocking training crawlers can be a deliberate choice, so set a goal for each crawler. Crawler names and descriptions follow what each company publishes and can change.</footer>
+</div>
+
+<script>
+const CR=[
+ {n:'GPTBot',o:'OpenAI',a:"Trains OpenAI models. Not used for ChatGPT search.",k:'train'},
+ {n:'OAI-SearchBot',o:'OpenAI',a:"Lets your pages appear in ChatGPT search results.",k:'search'},
+ {n:'ChatGPT-User',o:'OpenAI',a:"Opens your page when a ChatGPT user asks about it.",k:'user'},
+ {n:'ClaudeBot',o:'Anthropic',a:"Collects content to train Claude models.",k:'train'},
+ {n:'Claude-SearchBot',o:'Anthropic',a:"Lets your pages show up in Claude's search answers.",k:'search'},
+ {n:'Claude-User',o:'Anthropic',a:"Opens your page when a Claude user asks about it.",k:'user'},
+ {n:'PerplexityBot',o:'Perplexity',a:"Lets Perplexity find and cite your pages in answers.",k:'search'},
+ {n:'Google-Extended',o:'Google',a:"Gemini training and grounding, not Google Search.",k:'train'},
+ {n:'Applebot-Extended',o:'Apple',a:"Lets Apple use crawled content to train its AI models.",k:'train'},
+ {n:'CCBot',o:'Common Crawl',a:"Feeds Common Crawl, a dataset many AI models train on.",k:'train'}
+];
+const SAMPLE="User-agent: GPTBot\nDisallow: /\n\nUser-agent: CCBot\nDisallow: /\n\nUser-agent: ClaudeBot\nDisallow: /private/\nDisallow: /drafts/\n\nUser-agent: *\nAllow: /\n\nSitemap: https://example.com/sitemap.xml";
+const S={goal:{},open:new Set(),filter:'all',base:'',facts:'',loaded:false,err:'',flash:'',help:false,draft:null,cmp:null,waiting:false,warn:false};
+const norm=t=>t.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).join('\n');
+const HELP='<div class="help"><p>robots.txt must sit at the root of your domain, for example yoursite.com/robots.txt. Replace the old contents with the copy from the box, save or publish, then press Check again. Where you do that depends on your platform:</p><dl>'+
+'<dt>WordPress</dt><dd>Your SEO plugin (Yoast, Rank Math) usually has a robots.txt editor in its settings. Without one, upload a robots.txt file to the site root.</dd>'+
+'<dt>Shopify</dt><dd>Online Store, Themes, Edit code, then add a robots.txt template (robots.txt.liquid). Shopify recommends keeping its Liquid rules and adding yours, though plain text also works.</dd>'+
+'<dt>Wix</dt><dd>SEO dashboard, Tools and settings, Robots.txt Editor.</dd>'+
+'<dt>Squarespace</dt><dd>No custom rules. Settings, Website, Crawlers has switches for AI crawlers and search engines.</dd>'+
+'<dt>Webflow</dt><dd>Site settings has a robots.txt field. Add your rules there and publish.</dd>'+
+'<dt>Your own hosting</dt><dd>Put a plain text file named robots.txt in the top folder of your site (for Next.js, the public folder).</dd>'+
+'<dt>CDN or firewall</dt><dd>Cloudflare and similar services can block AI crawlers separately from robots.txt, so check their AI bot settings too.</dd></dl>'+
+'<p style="margin:10px 0 0">Crawlers may cache robots.txt for a while, so a change can take hours to be noticed.</p></div>';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const goalOf=n=>S.goal[n]||'allow';
+const need=r=>goalOf(r.c.n)==='allow'?r.s==='blocked':r.s!=='blocked';
+
+function parse(txt){
+  const groups=[];let cur=null,lastUA=false;
+  txt.split(/\r?\n/).forEach((raw,i)=>{
+    const line=raw.replace(/#.*/,'').trim();if(!line)return;
+    const j=line.indexOf(':');if(j<0)return;
+    const k=line.slice(0,j).trim().toLowerCase(),v=line.slice(j+1).trim();
+    if(k==='user-agent'){
+      if(!cur||!lastUA){cur={agents:[],rules:[],end:i};groups.push(cur)}
+      cur.agents.push(v.toLowerCase());cur.end=i;lastUA=true;
+    }else if(k==='allow'||k==='disallow'){
+      if(cur){cur.rules.push({allow:k==='allow',path:v,line:i});cur.end=i}lastUA=false;
+    }else lastUA=false;
+  });
+  return groups;
+}
+function match(path,pat){
+  if(pat==='')return false;
+  return new RegExp('^'+pat.replace(/[.+?^${}()|[\]\\]/g,'\\$&').replace(/\*/g,'.*').replace(/\\\$$/,'$')).test(path);
+}
+function evaluate(c,groups){
+  const n=c.n.toLowerCase();
+  let g=groups.filter(x=>x.agents.includes(n));const own=g.length>0;
+  if(!own)g=groups.filter(x=>x.agents.includes('*'));
+  const rules=g.flatMap(x=>x.rules);let best=null;
+  rules.filter(r=>match('/',r.path)).forEach(r=>{
+    if(!best||r.path.length>best.path.length||(r.path.length===best.path.length&&r.allow))best=r;
+  });
+  const dis=[...new Set(rules.filter(r=>!r.allow&&r.path&&!match('/',r.path)).map(r=>r.path))];
+  const s=best&&!best.allow?'blocked':dis.length?'partial':'allowed';
+  return{c,s,best,own,g,rules,dis};
+}
+const evalAll=t=>{const gr=parse(t);return CR.map(c=>evaluate(c,gr))};
+
+// Edits the robots.txt text so this crawler matches its goal.
+function fixText(txt,r,goal){
+  const L=txt.split(/\r?\n/),name=r.c.n;
+  const solo=r.own&&r.g.length===1&&r.g[0].agents.length===1;
+  const addGroup=rule=>{while(L.length&&!L[L.length-1].trim())L.pop();L.push('','User-agent: '+name,rule,'')};
+  const drop=list=>list.map(x=>x.line).sort((a,b)=>b-a).forEach(i=>L.splice(i,1));
+  if(goal==='allow'){
+    if(solo){
+      // Replace the first blocking rule instead of deleting it: a User-agent line with no rules
+      // would merge into the next group and inherit its rules.
+      const bad=r.rules.filter(x=>!x.allow&&match('/',x.path));
+      if(bad.length){L[bad[0].line]='Allow: /';drop(bad.slice(1))}
+    }else addGroup('Allow: /');
+  }else if(solo){
+    const gone=r.rules.filter(x=>x.allow&&match('/',x.path));
+    drop(gone);L.splice(r.g[0].end-gone.length+1,0,'Disallow: /');
+  }else addGroup('Disallow: /');
+  return L.join('\n');
+}
+function setText(v,asBase){
+  $('#robots').value=v;if(asBase)S.base=v;
+}
+function fixOne(n){
+  const t=$('#robots').value,r=evalAll(t).find(x=>x.c.n===n);
+  if(r&&need(r)){setText(fixText(t,r,goalOf(n)),false);S.cmp=null}
+}
+function fixAll(){CR.forEach(c=>fixOne(c.n))}
+
+function tile(r){
+  const c=r.c,g=goalOf(c.n),bad=need(r),on=S.open.has(c.n);
+  const label={blocked:'Blocked',partial:'Partly open',allowed:'Allowed'}[r.s];
+  const snip='User-agent: '+c.n+'\n'+(g==='allow'?'Allow: /':'Disallow: /');
+  const solo=r.own&&r.g.length===1&&r.g[0].agents.length===1;
+  let why;
+  if(r.s==='blocked')why='"Disallow: '+r.best.path+'" on line '+(r.best.line+1)+' in '+(r.own?'its own group':'the * (all bots) group')+' blocks the whole site.';
+  else if(r.s==='partial')why='Reachable, but these paths are off limits: '+r.dis.slice(0,4).join(', ')+(r.dis.length>4?' and '+(r.dis.length-4)+' more':'')+'.';
+  else why=r.g.length?'No rule blocks it.':'No rule mentions it, so it can fetch everything.';
+  let todo='';
+  if(bad)todo=g==='allow'?(solo?'Fix: replace the rule that blocks / with Allow: /.':'Fix: add a '+c.n+' group that allows /.'):'Fix: add a '+c.n+' rule that disallows /.';
+  else todo='This matches your goal.';
+  const dim=S.filter!=='all'&&S.filter!==r.s;
+  const cls='tile '+r.s+(on?' on':'')+(dim?' dim':'')+(S.flash===c.n?' flash':'');
+  const n=c.n;
+  return '<div class="'+cls+'"><div class="flip">'+
+    '<button type="button" class="face front" data-act="flip" data-n="'+n+'"'+(on?' inert':'')+'>'+
+      '<span class="tt"><span class="st s-'+r.s+'">'+label+'</span>'+(bad?'<span class="need-tag">Needs a change</span>':'')+'</span>'+
+      '<b class="nm">'+esc(n)+'</b><span class="op">'+esc(c.o)+'</span><span class="aff">'+esc(c.a)+'</span>'+
+      '<span class="foot"><span>Goal: '+(g==='allow'?'allow':'block')+'</span><span class="more">Details</span></span></button>'+
+    '<div class="face back"'+(on?'':' inert')+'>'+
+      '<div class="tt"><b class="nm">'+esc(n)+'</b><button type="button" class="btn" data-act="flip" data-n="'+n+'">Close</button></div>'+
+      '<p class="why">'+esc(why)+' '+esc(todo)+'</p>'+
+      '<div class="seg" role="group" aria-label="Goal for '+esc(n)+'"><button type="button" data-act="goal" data-n="'+n+'" data-g="allow" aria-pressed="'+(g==='allow')+'">Allow</button><button type="button" data-act="goal" data-n="'+n+'" data-g="block" aria-pressed="'+(g==='block')+'">Block</button></div>'+
+      (bad?'<div class="row"><button type="button" class="btn pri" data-act="fix" data-n="'+n+'">Apply fix</button><button type="button" class="btn" data-act="copy" data-l="Copy lines" data-t="'+esc(snip)+'">Copy lines</button></div>':'')+
+    '</div></div></div>';
+}
+
+function render(){
+  const txt=$('#robots').value,meta=$('#meta').value,out=$('#results');
+  if(S.err){out.innerHTML='<p class="msg bad">'+esc(S.err)+'</p>';return}
+  if(!txt.trim()&&!S.loaded&&S.waiting){
+    out.innerHTML='<div class="empty"><p>Paste the robots.txt your site serves now (open yoursite.com/robots.txt in a browser) to see whether your changes went live.</p></div>';return;
+  }
+  if(!txt.trim()&&!S.loaded){
+    out.innerHTML='<div class="empty"><p>Paste a robots.txt on the left, or load an example, to see how each AI crawler is treated.</p><button type="button" class="btn pri" data-act="example">Load an example</button></div>';return;
+  }
+  if(/<\s*(html|head|body)\b/i.test(txt)){
+    out.innerHTML='<p class="msg bad">That looks like a web page, not a robots.txt file. A missing robots.txt often returns an HTML error page. Copy the plain text instead.</p>';return;
+  }
+  const res=evalAll(txt),cnt=k=>res.filter(r=>r.s===k).length,miss=res.filter(need).length;
+  const stat=(f,l,n)=>'<button type="button" class="stat f-'+f+(S.filter===f?' on':'')+'" data-act="filter" data-f="'+f+'" aria-pressed="'+(S.filter===f)+'"><b>'+n+'</b><span>'+l+'</span></button>';
+  let h='<div class="sum"><div class="meter" role="img" aria-label="'+cnt('blocked')+' blocked, '+cnt('partial')+' partly open, '+cnt('allowed')+' allowed">'+
+    (cnt('blocked')?'<span class="seg-b" style="flex:'+cnt('blocked')+'"></span>':'')+(cnt('partial')?'<span class="seg-p" style="flex:'+cnt('partial')+'"></span>':'')+(cnt('allowed')?'<span class="seg-a" style="flex:'+cnt('allowed')+'"></span>':'')+'</div>'+
+    '<div class="stats">'+stat('all','All',res.length)+stat('blocked','Blocked',cnt('blocked'))+stat('partial','Partly open',cnt('partial'))+stat('allowed','Allowed',cnt('allowed'))+'</div>'+
+    '<div class="row"><span class="lab">Goals</span><button type="button" class="btn" data-act="goals" data-m="allow">Allow all</button><button type="button" class="btn" data-act="goals" data-m="train">Block training bots only</button>'+
+    '<span class="sp">'+(miss?'<button type="button" class="btn pri" data-act="all">Apply all '+miss+' fix'+(miss>1?'es':'')+'</button>':'<span class="ok-note">Every crawler matches its goal</span>')+'</span></div>'+
+    '<div class="row"><span class="lab">After you upload</span><button type="button" class="btn" data-act="help" aria-expanded="'+S.help+'">Where to upload</button><button type="button" class="btn" data-act="recheck">Check again</button></div></div>';
+  if(S.help)h+=HELP;
+  if(S.cmp)h+=S.cmp.same?'<p class="msg good">Your changes are live. The file on your site now matches your edited copy.</p>':'<p class="msg bad">The file on your site still differs from your edited copy. It may not have been replaced yet, or a cache may still be serving the old one. Wait a few minutes and check again.</p>';
+  if(txt!==S.base)h+='<p class="msg">This is an edited copy. Your live site only changes once you upload this file as yoursite.com/robots.txt.</p>';
+  if(S.facts)h+='<p class="msg'+(S.warn?' bad':'')+'">'+esc(S.facts)+'</p>';
+  const flags=[...new Set((meta.match(/\b(noindex|none|nosnippet|noai|noimageai)\b/gi)||[]).map(s=>s.toLowerCase()))];
+  if(flags.length)h+='<p class="msg">Found '+esc(flags.join(', '))+' in your meta tags. noindex and none keep pages out of search indexes, nosnippet limits what can be quoted, and noai and noimageai are non-standard, so few crawlers honor them.</p>';
+  h+='<div class="tiles">'+res.map(tile).join('')+'</div>';
+  S.flash='';
+  out.innerHTML=h;
+}
+
+async function copy(t,b){
+  try{await navigator.clipboard.writeText(t);b.textContent='Copied'}catch(e){b.textContent='Copy failed'}
+  setTimeout(()=>{b.textContent=b.dataset.l},1500);
+}
+function recheck(){
+  const t=$('#robots').value;
+  if(t!==S.base)S.draft=t;
+  S.cmp=null;
+  if(api&&$('#url').value.trim())return fetchSite();
+  // No site fetch available: ask for a fresh paste of the live file and compare it with the edited copy.
+  setText('',true);S.loaded=false;S.facts='';S.err='';S.waiting=true;
+  $('#robots').placeholder='Paste the robots.txt your site serves now';$('#robots').focus();render();
+}
+function loadExample(){S.waiting=false;S.draft=null;S.cmp=null;S.err='';S.facts='';S.loaded=false;setText(SAMPLE,true);render()}
+
+$('#results').addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const a=b.dataset.act,n=b.dataset.n;
+  if(a==='flip'){
+    const t=b.closest('.tile'),on=t.classList.toggle('on');
+    on?S.open.add(n):S.open.delete(n);
+    t.querySelector('.front').toggleAttribute('inert',on);
+    t.querySelector('.back').toggleAttribute('inert',!on);
+    (on?t.querySelector('.back .btn'):t.querySelector('.front')).focus({preventScroll:true});
+  }
+  else if(a==='goal'){S.goal[n]=b.dataset.g;render()}
+  else if(a==='filter'){S.filter=b.dataset.f;render()}
+  else if(a==='fix'){fixOne(n);S.flash=n;render()}
+  else if(a==='all'){fixAll();render()}
+  else if(a==='goals'){CR.forEach(c=>S.goal[c.n]=b.dataset.m==='train'&&c.k==='train'?'block':'allow');render()}
+  else if(a==='copy')copy(b.dataset.t,b);
+  else if(a==='help'){S.help=!S.help;render()}
+  else if(a==='recheck')recheck();
+  else if(a==='example')loadExample();
+});
+let timer;
+$('#robots').addEventListener('input',e=>{
+  const v=e.target.value;S.err='';S.facts='';S.base=v;
+  if(S.waiting&&v.trim()){
+    S.waiting=false;
+    if(S.draft){S.cmp={same:norm(S.draft)===norm(v)};S.cmpFor=v;if(S.cmp.same)S.draft=null}
+  }else if(S.cmp&&v!==S.cmpFor)S.cmp=null;
+  clearTimeout(timer);timer=setTimeout(render,150);
+});
+$('#meta').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(render,150)});
+$('#example').addEventListener('click',loadExample);
+$('#reset').addEventListener('click',()=>{setText(S.base,false);render()});
+$('#copyAll').addEventListener('click',e=>copy($('#robots').value,e.currentTarget));
+
+// Live site fetch: only shows up when the page is served with the /api/check function.
+let api=false;
+fetch('/api/check?ping=1').then(r=>r.ok?r.json():null).then(j=>{if(j&&j.ok){api=true;$('#urlbox').hidden=false}}).catch(()=>{});
+async function fetchSite(){
+  const u=$('#url').value.trim();if(!api||!u)return;
+  S.err='';S.cmp=null;S.waiting=false;S.warn=false;S.facts='Fetching '+u+' ...';render();
+  try{
+    const r=await fetch('/api/check?url='+encodeURIComponent(u)),j=await r.json();
+    if(!r.ok)throw new Error(j.error||'Request failed');
+    setText(j.robots||'',true);$('#meta').value=j.meta||'';S.loaded=true;
+    if(S.draft){S.cmp={same:norm(S.draft)===norm(j.robots||'')};S.cmpFor=j.robots||'';if(S.cmp.same)S.draft=null}
+    const st=j.robotsStatus;
+    const rb=j.robots?'found':(st===404||st===410)?'not found, so crawlers are allowed by default':st===200?'was empty or not plain text, so it was ignored':'could not be read (HTTP '+st+'). The site may block automated checks or be down, so these results may be wrong';
+    S.warn=!j.robots&&st!==404&&st!==410&&st!==200;
+    S.facts='robots.txt '+rb+'. llms.txt '+(j.llms?'found':'not at /llms.txt')+', sitemap '+(j.sitemap?'found':'not at /sitemap.xml')+'.';
+  }catch(e){S.facts='';S.err='Could not fetch that site: '+e.message+'. You can paste its robots.txt instead.'}
+  render();
+}
+$('#fetch').addEventListener('click',fetchSite);
+$('#url').addEventListener('keydown',e=>{if(e.key==='Enter')fetchSite()});
+render();
+</script>
+</body>
+</html>
